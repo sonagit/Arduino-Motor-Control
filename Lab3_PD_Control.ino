@@ -24,10 +24,11 @@ float Kd=0; // derivative control const
 void setup()
 {
   Serial.begin(9600);
+  Serial.println();
   Serial.println("Serial baud rate: 9600");
   
   // give user time to type constants
-  Serial.setTimeout(3000);
+  Serial.setTimeout(2000);
 
   pinMode(PWMpin, OUTPUT);
   pinMode(DIRpin, OUTPUT);
@@ -55,7 +56,7 @@ void setup()
   while (Kd==0)
   {
     Serial.print("Enter a number for Kd: ");
-    Kp = (float) Serial.readStringUntil('\n').toFloat();
+    Kd = (float) Serial.readStringUntil('\n').toFloat();
     Serial.println();
   }
   Serial.print("Kd = ");
@@ -87,7 +88,7 @@ void loop(){
     dEdt = deltaError/sampleTime;
 
     // set motor output and return u with saturation limit
-    u = Kp*error + Kd*dEdt;
+    u = Kp*error - Kd*dEdt;
     u = setMotor(u);
 
     // shift values
@@ -98,11 +99,11 @@ void loop(){
   // read pot, send to serial slower than controller
   if(millis()-prevPrintTime>sampleTime*10){
     Serial.print(setpoint);
-    Serial.print('     ');
+    Serial.print("\t");
     Serial.print(theta);
-    Serial.print('     ');
+    Serial.print("\t");
     Serial.print(error);
-    Serial.print("     Output: ");
+    Serial.print("\tOutput: ");
     Serial.println(u);
     prevPrintTime = millis();
   }
