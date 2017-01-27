@@ -7,20 +7,25 @@ Motor Control and encoder sampling
 #define encPinA 2
 #define encPinB 3
 
-int theta; // potentiometer position
+float theta; // potentiometer position
 int sampleTime = 20; // time step
-int setpoint; // desired position
-int error; // difference between position and setpoint
-int prevError; // previous sampling error (for Derv control)
-
+float setpoint; // desired position
+float error; // difference between position and setpoint
+float prevError; // previous sampling error (for derivative control)
+float deltaError; // change in error (for derivative control)
+float dEdt; // error derivative (for derivative control)
+float u; // output to motor
 long prevTime = millis(); // time at previous sample
 long prevPrintTime = millis(); // time at prev print
 float Kp=0; // proportional control const
+float Kd=0; // derivative control const
 
 ///////////////////////////////////////////////////////////////////////////////
 void setup()
 {
   Serial.begin(9600);
+  Serial.println("Serial baud rate: 9600");
+  
   // give user time to type constants
   Serial.setTimeout(3000);
 
@@ -31,20 +36,30 @@ void setup()
   theta = map(analogRead(A3),0,1024,0,340);
 
   // set desired postion to 180 degrees past initial position
-  setpoint = theta + 180;
+  setpoint = theta + 180.0;
 
   // correct setpoint if outside 0-340 degrees
-  if (setpoint>340){setpoint = setpoint-340;}
+  if (setpoint>340.0){setpoint = setpoint-340.0;}
 
   // Ask for Kp value
   while (Kp==0)
   {
-    Serial.print("Enter an integer for Kp: ");
+    Serial.print("Enter a number for Kp: ");
     Kp = (float) Serial.readStringUntil('\n').toFloat();
     Serial.println();
   }
   Serial.print("Kp = ");
   Serial.println(Kp);
+
+    // Ask for Kp value
+  while (Kd==0)
+  {
+    Serial.print("Enter a number for Kd: ");
+    Kp = (float) Serial.readStringUntil('\n').toFloat();
+    Serial.println();
+  }
+  Serial.print("Kd = ");
+  Serial.println(Kd);
 
   Serial.print("Current position: ");
   Serial.print(theta);
@@ -67,8 +82,13 @@ void loop(){
     // calc error
     error = setpoint-theta;
 
-    // set motor output
-    setMotor(Kp*error);
+    // change in error
+    deltaError = error - prevError;
+    dEdt = deltaError/sampleTime;
+
+    // set motor output and return u with saturation limit
+    u = Kp*error + Kd*dEdt;
+    u = setMotor(u);
 
     // shift values
     prevError = error;
@@ -78,10 +98,12 @@ void loop(){
   // read pot, send to serial slower than controller
   if(millis()-prevPrintTime>sampleTime*10){
     Serial.print(setpoint);
-    Serial.print(' ');
+    Serial.print('     ');
     Serial.print(theta);
-    Serial.print(' ');
-    Serial.println(error);
+    Serial.print('     ');
+    Serial.print(error);
+    Serial.print("     Output: ");
+    Serial.println(u);
     prevPrintTime = millis();
   }
 }
@@ -90,22 +112,22 @@ void loop(){
 // Function to set speed and direction of motor.
 // Has saturation protection
 ///////////////////////////////////////////////////////////////////////////////
-int setMotor(int motorSpeed)
+float setMotor(float motorSpeed)
 {
   // Set motor direction
   if (motorSpeed>0){digitalWrite(DIRpin,HIGH);}
   else{digitalWrite(DIRpin,LOW);}
 
   // Saturation protection
-  if (motorSpeed>100){motorSpeed=100;}
-  if (motorSpeed<-100){motorSpeed=-100;}
-
-  // Return the actual controller output with saturation protection
-  return motorSpeed;
+  if (motorSpeed>100){motorSpeed=100.0;}
+  if (motorSpeed<-100){motorSpeed=-100.0;}
 
   // convert 0-100% to 0-255 duty cycle
   int motorDuty = map(abs(motorSpeed),0,100,0,255);
   
   // send PWM to motor
   analogWrite(PWMpin,motorDuty);
+
+  // Return the actual controller output with saturation protection
+  return motorSpeed;
 }
