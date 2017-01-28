@@ -30,8 +30,8 @@ void loop()
 float setMotor(float motorSpeed)
 {
   // Set motor direction
-  if (motorSpeed>0){digitalWrite(DIRpin,HIGH);}
-  else{digitalWrite(DIRpin,LOW);}
+  if (motorSpeed>0){digitalWrite(DIRpin,LOW);}
+  else{digitalWrite(DIRpin,HIGH);}
 
   // Saturation protection
   if (motorSpeed>100){motorSpeed=100.0;}
