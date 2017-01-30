@@ -10,9 +10,11 @@ Motor Control and encoder sampling
 int sampleTime = 20; // time step in milliseconds
 int serial_printing = 1; // verbose serial printing?
 int print_time; // time between printing to serial
+int toggle=0; // toggles setpoint
 
 long prevTime = millis(); // time at previous sample
 long prevPrintTime = millis(); // time at prev print
+long toggleTime = millis(); // time at last toggle
 
 float theta; // potentiometer position
 float setpoint; // desired position
@@ -68,8 +70,11 @@ void loop()
   // alternate setpoint
   if(millis()-toggleTime>5000)
   {
-    setpoint=90;
+    if(toggle){setpoint=90;toggle=0;}
+    else{setpoint=180;toggle=1;}
+    toggleTime = millis();
   }
+
   // If values sent through serial monitor, set PID constants
   if(Serial.available()>0)
   {
@@ -138,11 +143,11 @@ void loop()
   {
     Serial.print(setpoint);
     Serial.print("\t");
-    Serial.print(theta);
-    Serial.print("\t");
-    Serial.print(error);
-    Serial.print("\t");
-    Serial.println(u);
+    Serial.println(theta);
+    //Serial.print("\t");
+    //Serial.print(error);
+    //Serial.print("\t");
+    //Serial.println(u);
     prevPrintTime = millis();
   }
 }
