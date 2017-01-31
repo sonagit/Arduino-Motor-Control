@@ -6,6 +6,7 @@ Motor Control and encoder sampling
 #define PWMpin  9
 #define encPinA 2
 #define encPinB 3
+#define potPin  3
 
 void setup()
 {
@@ -20,7 +21,11 @@ void loop()
 {
 	// Set motor speed
 	setMotor(100);
-	delay(2000);
+	for(int i=1; i<1000; i++){
+    Serial.println(analogRead(potPin));
+    delay(50);
+  }
+  delay(2000);
 
 	setMotor(0);
 	delay(2000);

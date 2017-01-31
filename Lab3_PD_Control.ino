@@ -26,7 +26,7 @@ float inteError; // integral of error since time = zero
 float u; // output to motor
 float Kp=0.5; // proportional control const
 float Ki=0; // integral control const
-float Kd=0.1; // derivative control const
+float Kd=0; // derivative control const
 
 ///////////////////////////////////////////////////////////////////////////////
 void setup()
