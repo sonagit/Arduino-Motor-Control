@@ -11,117 +11,110 @@ By Daniel Heideman and Stuart Sonatina
 #define encPinA 2
 #define encPinB 3
 
-int serial_printing = 1;    // verbose serial printing?
+int serial_printing = 1;	// verbose serial printing?
 
 
-int sampleTime = 20;        // time step in milliseconds
-int print_time;             // time between printing to serial
+int sampleTime = 20;		// time step in milliseconds
+int printTime;			 // time between printing to serial
 
 long prevTime = millis();   // time at previous sample
 long prevPrintTime = millis(); // time at prev print
-long nturns;                // number of turns since restart of arduino
+long nturns;				// number of turns since restart of arduino
 
-float theta;                // potentiometer position
-float omega;                // angular velocity
-float u;                    // output to motor
+float theta;				// potentiometer position
+float omega;				// angular velocity
+float u;					// output to motor
 
 ///////////////////////////////////////////////////////////////////////////////
 void setup()
 {
-  Serial.begin(115200);
-  
-  // give user time to type constants
-  Serial.setTimeout(2000);  // milliseconds
-
-  pinMode(PWMpin, OUTPUT);
-  pinMode(DIRpin, OUTPUT);
-
-  // get current position
-  theta = map(analogRead(A3),0,1024,0,340); // degrees
-
-  // set desired postion to 180 degrees past initial position
-  setpoint = theta + 180.0;
-
-  // correct setpoint if outside 0-340 degrees
-  if (setpoint>340.0){setpoint = setpoint-340.0;}
-  
-  if(serial_printing)
-  {
-    print_time = 400; // milliseconds
-    Serial.print("Current position: ");
-    Serial.print(theta);
-    Serial.println(" Degrees");
-    Serial.print("Desired Position: ");
-    Serial.print(setpoint);
-    Serial.println(" Degrees");
-    Serial.println();
-    delay(2000); // milliseconds
-  }
-  else{print_time = 50;} // milliseconds
+    Serial.begin(115200);
+    
+    // give user time to type constants
+    Serial.setTimeout(2000);  // milliseconds
+    
+    pinMode(PWMpin, OUTPUT);
+    pinMode(DIRpin, OUTPUT);
+    
+    // get current position
+    theta = map(analogRead(A3),0,1024,0,340); // degrees
+    
+    if(serial_printing)
+    {
+    	printTime = 400; // milliseconds
+    	Serial.print("Current position: ");
+    	Serial.print(theta);
+    	Serial.println(" Degrees");
+    	Serial.print("Desired Position: ");
+    	Serial.print(setpoint);
+    	Serial.println(" Degrees");
+    	Serial.println();
+    	delay(2000); // milliseconds
+    }
+    else{printTime = 50;} // milliseconds
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void loop()
 {
-
-  // If values sent through serial monitor, do stuff
-  if(Serial.available()>0)
-  {
-    switch(char(Serial.read()))
+    // If values sent through serial monitor, do stuff
+    if(Serial.available()>0)
     {
-        case
-    }
-    delay(1000);
-  }
-
-  //controller
-  if(millis()-prevTime>sampleTime)
-  {
-    // get current position
-    theta = map(analogRead(A3),0,1024,0,340); // degrees
-    
-    // If position is nearing 'dead zone' with positive velocity,
-    // count as a full positive turn
-    if(theta > 335 && omega > 50)
-    {
-        nturns = nturns + 1;
-        
-        // wait until pot is out of 'dead zone'
-        while (theta > 335 or theta < 1)
+        switch(char(Serial.read()))
         {
-            delay(1);
-            // get current position
-            theta = map(analogRead(A3),0,1024,0,340); // degrees
+        	case
         }
+        delay(1000);
     }
     
-    // Same for opposite direction:
-    // If position is nearing 'dead zone' with negative velocity,
-    // count as a full negative turn
-    if(theta < 5 && omega < -50)
+    // Read position after sampleTime has elapsed
+    if(millis()-prevTime>sampleTime)
     {
-        nturns = nturns - 1;
-        
-        // wait until pot is out of 'dead zone'
-        while (theta > 335 or theta < 1)
-        {
-            delay(1);
-            // get current position
-            theta = map(analogRead(A3),0,1024,0,340); // degrees
-        }
+    	// get current position
+    	theta = map(analogRead(A3),0,1024,0,340); // degrees
+    	
+    	// If position is nearing 'dead zone' with positive velocity,
+    	// count as a full positive turn
+    	if(theta > 335 && omega > 50)
+    	{
+    		nturns = nturns + 1;
+    		
+    		// wait until pot is out of 'dead zone'
+    		while (theta > 335 or theta < 1)
+    		{
+    			delay(1);
+    			// get current position
+    			theta = map(analogRead(A3),0,1024,0,340); // degrees
+    		}
+    	}
+    	
+    	// Same for opposite direction:
+    	// If position is nearing 'dead zone' with negative velocity,
+    	// count as a full negative turn
+    	if(theta < 5 && omega < -50)
+    	{
+    		nturns = nturns - 1;
+    		
+    		// wait until pot is out of 'dead zone'
+    		while (theta > 335 or theta < 1)
+    		{
+    			delay(1);
+    			// get current position
+    			theta = map(analogRead(A3),0,1024,0,340); // degrees
+    		}
+    	}
+    	
+    	// set motor output and return u with saturation limit
+    	u = setMotor(u);
     }
-    
-    // set motor output and return u with saturation limit
-    u = setMotor(u);
-  }
 
-  // read pot, send to serial slower than controller
-  if(millis()-prevPrintTime>print_time)
-  {
-    Serial.println(theta);
-    prevPrintTime = millis();
-  }
+    // send position to serial after printTime has elapsed
+    if(millis()-prevPrintTime>printTime)
+    {
+        Serial.println(theta);
+        prevPrintTime = millis();
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////
 // setMotor
