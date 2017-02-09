@@ -19,12 +19,10 @@ int print_time;             // time between printing to serial
 
 long prevTime = millis();   // time at previous sample
 long prevPrintTime = millis(); // time at prev print
-
-NEED TO DEFINE:
-nturns
-omega
+long nturns;                // number of turns since restart of arduino
 
 float theta;                // potentiometer position
+float omega;                // angular velocity
 float u;                    // output to motor
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -33,13 +31,13 @@ void setup()
   Serial.begin(115200);
   
   // give user time to type constants
-  Serial.setTimeout(2000); // milliseconds
+  Serial.setTimeout(2000);  // milliseconds
 
   pinMode(PWMpin, OUTPUT);
   pinMode(DIRpin, OUTPUT);
 
   // get current position
-  theta = map(analogRead(A3),0,1024,0,340);
+  theta = map(analogRead(A3),0,1024,0,340); // degrees
 
   // set desired postion to 180 degrees past initial position
   setpoint = theta + 180.0;
