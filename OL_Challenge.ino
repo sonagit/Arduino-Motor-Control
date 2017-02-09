@@ -37,12 +37,7 @@ void setup()
     if(serialPrinting)
     {
     	printTime = 400; // milliseconds
-    	Serial.print("Current position: ");
-    	Serial.print(theta);
-    	Serial.println(" Degrees");
-    	Serial.print("Desired Position: ");
-    	Serial.print(setpoint);
-    	Serial.println(" Degrees");
+    	Serial.println("Begin!");
     	Serial.println();
     	delay(2000); // milliseconds
     }
