@@ -11,35 +11,30 @@ By Daniel Heideman and Stuart Sonatina
 #define encPinA 2
 #define encPinB 3
 
-int serial_printing = 1;	// verbose serial printing?
+int serialPrinting = 1;	// verbose serial printing?
 
 
 int sampleTime = 20;		// time step in milliseconds
-int printTime;			 // time between printing to serial
+int printTime;			    // time between printing to serial
 
 long prevTime = millis();   // time at previous sample
 long prevPrintTime = millis(); // time at prev print
 long nturns;				// number of turns since restart of arduino
 
-float theta;				// potentiometer position
+float theta=0;				// potentiometer position
 float omega;				// angular velocity
-float u;					// output to motor
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ setup
+******************************************************************************/
 void setup()
 {
     Serial.begin(115200);
     
-    // give user time to type constants
-    Serial.setTimeout(2000);  // milliseconds
-    
     pinMode(PWMpin, OUTPUT);
     pinMode(DIRpin, OUTPUT);
     
-    // get current position
-    theta = map(analogRead(A3),0,1024,0,340); // degrees
-    
-    if(serial_printing)
+    if(serialPrinting)
     {
     	printTime = 400; // milliseconds
     	Serial.print("Current position: ");
@@ -55,15 +50,20 @@ void setup()
 
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ looooooooooop
+******************************************************************************/
 void loop()
 {
-    // If values sent through serial monitor, do stuff
+    // If values are sent through serial monitor, do stuff
     if(Serial.available()>0)
     {
         switch(char(Serial.read()))
         {
-        	case
+        	case 'S':
+        	case 's':
+        	    setMotor(Serial.parseFloat());
+        	    break;
         }
         delay(1000);
     }
@@ -76,37 +76,20 @@ void loop()
     	
     	// If position is nearing 'dead zone' with positive velocity,
     	// count as a full positive turn
-    	if(theta > 335 && omega > 50)
-    	{
-    		nturns = nturns + 1;
-    		
-    		// wait until pot is out of 'dead zone'
-    		while (theta > 335 or theta < 1)
-    		{
-    			delay(1);
-    			// get current position
-    			theta = map(analogRead(A3),0,1024,0,340); // degrees
-    		}
-    	}
+    	if(theta > 335 && omega > 50){nturns = nturns + 1;}
     	
     	// Same for opposite direction:
     	// If position is nearing 'dead zone' with negative velocity,
     	// count as a full negative turn
-    	if(theta < 5 && omega < -50)
-    	{
-    		nturns = nturns - 1;
-    		
-    		// wait until pot is out of 'dead zone'
-    		while (theta > 335 or theta < 1)
-    		{
-    			delay(1);
-    			// get current position
-    			theta = map(analogRead(A3),0,1024,0,340); // degrees
-    		}
-    	}
+    	if(theta < 5 && omega < -50){nturns = nturns - 1;}
     	
-    	// set motor output and return u with saturation limit
-    	u = setMotor(u);
+    	// wait until pot is out of 'dead zone'
+    	while (theta > 335 or theta < 1)
+		{
+			delay(1);
+			// get current position
+			theta = map(analogRead(A3),0,1024,0,340); // degrees
+		}
     }
 
     // send position to serial after printTime has elapsed
@@ -116,11 +99,14 @@ void loop()
         prevPrintTime = millis();
     }
 }
-///////////////////////////////////////////////////////////////////////////////
-// setMotor
-// Function to set speed and direction of motor.
-// Has saturation protection
-///////////////////////////////////////////////////////////////////////////////
+
+/******************************************************************************
+ setMotor
+
+ Function to set speed and direction of motor.
+ Has saturation protection
+******************************************************************************/
+
 float setMotor(float motorSpeed)
 {
   // Set motor direction
